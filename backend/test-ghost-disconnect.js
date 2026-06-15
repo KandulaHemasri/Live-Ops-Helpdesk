@@ -23,14 +23,13 @@ function recordResult(testName, passed, details = '') {
   console.log(`${status}: ${testName}${details ? ` - ${details}` : ''}`);
 }
 
-// ====== TEST 1: Ghost Disconnect with Single Agent ======
+
 async function testGhostDisconnectSingleAgent() {
   console.log('\n\n');
   console.log(' TEST 1: Ghost Disconnect - Single Agent ');
   console.log('\n');
 
   try {
-    // Create Agent A
     const agentA = await createAgent('agent_a', 'Agent A');
     await delay(500);
 
@@ -43,7 +42,6 @@ async function testGhostDisconnectSingleAgent() {
 
     await delay(1000);
 
-    // Verify ticket is locked BEFORE disconnect
     let lockStateBeforeLocked = false;
     agentA.on('ticket_locked', (data) => {
       if (data.ticketId === 'ticket_101') {
@@ -54,17 +52,16 @@ async function testGhostDisconnectSingleAgent() {
 
     await delay(1000);
 
-    // Abruptly disconnect Agent A (GHOST DISCONNECT)
+   
     console.log(`  → SIMULATING LAPTOP LID CLOSE... Agent A disconnects abruptly`);
     agentA.disconnect();
 
     await delay(2000);
 
-    // Create Agent B to verify unlock was broadcast
     console.log(`  → Agent B connects to verify ticket state`);
     const agentB = await createAgent('agent_b', 'Agent B');
 
-    // Listen for initial state
+ 
     let ticketIsUnlocked = false;
     agentB.on('initial_lock_state', (data) => {
       const ticket101 = data.lockedTickets['ticket_101'];
@@ -74,7 +71,7 @@ async function testGhostDisconnectSingleAgent() {
       }
     });
 
-    // Also listen for unlock event
+    
     agentB.on('ticket_unlocked', (data) => {
       if (data.ticketId === 'ticket_101') {
         console.log(`  → Received unlock broadcast: ${data.reason}`);
@@ -98,16 +95,16 @@ async function testGhostDisconnectSingleAgent() {
 
 // ====== TEST 2: Ghost Disconnect with Multiple Locked Tickets ======
 async function testGhostDisconnectMultipleTickets() {
-  console.log('\n\n╔═════════════════════════════════════════════╗');
-  console.log('║ TEST 2: Ghost Disconnect - Multiple Tickets ║');
-  console.log('╚═════════════════════════════════════════════╝\n');
+  console.log('\n\n');
+  console.log(' TEST 2: Ghost Disconnect - Multiple Tickets ');
+  console.log('\n');
 
   try {
-    // Create Agent C
+   
     const agentC = await createAgent('agent_c', 'Agent C');
     await delay(500);
 
-    // Agent C locks MULTIPLE tickets
+    
     console.log(`  → Agent C locks 3 tickets...`);
     const ticketIds = ['ticket_201', 'ticket_202', 'ticket_203'];
 
@@ -122,14 +119,14 @@ async function testGhostDisconnectMultipleTickets() {
 
     await delay(1500);
 
-    // Abruptly disconnect
+ 
     console.log(`  → SIMULATING GHOST DISCONNECT... Agent C closes connection`);
     agentC.disconnect();
 
     await delay(2000);
 
-    // Create Agent D to verify ALL tickets are unlocked
-    console.log(`  → Agent D connects to verify all tickets unlocked`);
+    
+    console.log(`  Agent D connects to verify all tickets unlocked`);
     const agentD = await createAgent('agent_d', 'Agent D');
 
     let allUnlocked = false;
@@ -137,7 +134,7 @@ async function testGhostDisconnectMultipleTickets() {
       const locked = ticketIds.filter((id) => data.lockedTickets[id]);
       if (locked.length === 0) {
         allUnlocked = true;
-        console.log(`  → Verified: ALL ${ticketIds.length} tickets are UNLOCKED`);
+        console.log(` Verified: ALL ${ticketIds.length} tickets are UNLOCKED`);
       }
     });
 
@@ -157,16 +154,16 @@ async function testGhostDisconnectMultipleTickets() {
 
 // ====== TEST 3: Ghost Disconnect While Agent B Waiting ======
 async function testGhostDisconnectNotification() {
-  console.log('\n\n╔═════════════════════════════════════════════════╗');
-  console.log('║ TEST 3: Ghost Disconnect - Notify Other Agents  ║');
-  console.log('╚═════════════════════════════════════════════════╝\n');
+  console.log('\n\n');
+  console.log(' TEST 3: Ghost Disconnect - Notify Other Agents ');
+  console.log('\n');
 
   try {
-    // Create Agent E
+   
     const agentE = await createAgent('agent_e', 'Agent E');
     await delay(500);
 
-    // Agent E locks ticket #301
+    
     agentE.emit('lock_ticket', {
       ticketId: 'ticket_301',
       agentId: 'agent_e',
@@ -174,19 +171,19 @@ async function testGhostDisconnectNotification() {
     });
     await delay(1000);
 
-    // Create Agent F
+    
     console.log(`  → Agent F joins dashboard`);
     const agentF = await createAgent('agent_f', 'Agent F');
     await delay(1000);
 
-    // Agent F sees ticket #301 is locked
-    console.log(`  → Agent F sees Ticket #301 is locked by Agent E (can't edit)`);
+   
+    console.log(` Agent F sees Ticket #301 is locked by Agent E (can't edit)`);
 
-    // Agent E's laptop crashes (GHOST DISCONNECT)
+    
     console.log(`  → GHOST DISCONNECT: Agent E's connection dies`);
     agentE.disconnect();
 
-    // Agent F should receive unlock notification
+
     let receivedUnlockNotification = false;
     agentF.once('ticket_unlocked', (data) => {
       if (data.ticketId === 'ticket_301') {
@@ -212,16 +209,16 @@ async function testGhostDisconnectNotification() {
 
 // ====== TEST 4: Graceful Disconnect (Control) ======
 async function testGracefulDisconnect() {
-  console.log('\n\n╔══════════════════════════════════════════╗');
-  console.log('║ TEST 4: Graceful Unlock (Control Test)  ║');
-  console.log('╚══════════════════════════════════════════╝\n');
+  console.log('\n\n');
+  console.log(' TEST 4: Graceful Unlock (Control Test)');
+  console.log('\n');
 
   try {
-    // Create Agent G
+   
     const agentG = await createAgent('agent_g', 'Agent G');
     await delay(500);
 
-    // Agent G locks ticket #401
+    
     agentG.emit('lock_ticket', {
       ticketId: 'ticket_401',
       agentId: 'agent_g',
@@ -229,9 +226,9 @@ async function testGracefulDisconnect() {
     });
     await delay(1000);
 
-    console.log(`  → Agent G EXPLICITLY unlocks ticket before leaving`);
+    console.log(` Agent G EXPLICITLY unlocks ticket before leaving`);
 
-    // Agent G PROPERLY unlocks (not a ghost disconnect)
+
     agentG.emit('unlock_ticket', {
       ticketId: 'ticket_401',
       agentId: 'agent_g',
@@ -239,7 +236,7 @@ async function testGracefulDisconnect() {
 
     await delay(1000);
 
-    // Create Agent H to verify unlock
+   
     const agentH = await createAgent('agent_h', 'Agent H');
 
     let ticketUnlockedGracefully = false;
@@ -265,7 +262,7 @@ async function testGracefulDisconnect() {
   }
 }
 
-// ====== TEST RUNNER ======
+
 async function runAllTests() {
   console.log(`
     GHOST DISCONNECT HANDLER - COMPREHENSIVE TESTS                                                            
@@ -273,10 +270,10 @@ async function runAllTests() {
   explicitly unlocking tickets?                       
   `);
 
-  // Wait for server to be ready
+
   await delay(2000);
 
-  // Run tests sequentially
+  
   await testGhostDisconnectSingleAgent();
   await delay(1500);
 
@@ -289,7 +286,6 @@ async function runAllTests() {
   await testGracefulDisconnect();
   await delay(1500);
 
-  // Print results summary
   console.log(`
 \n\n TEST RESULTS SUMMARY 
   `);
@@ -301,7 +297,7 @@ async function runAllTests() {
     }
   });
 
-  const passedCount = testResults.filter((r) => r.status === '✅ PASS').length;
+  const passedCount = testResults.filter((r) => r.status === ' PASS').length;
   const totalCount = testResults.length;
 
   console.log(`
@@ -313,7 +309,7 @@ ${passedCount === totalCount ? '   ALL TESTS PASSED - Ghost Disconnect Handler i
   process.exit(passedCount === totalCount ? 0 : 1);
 }
 
-// Start tests
+
 runAllTests().catch((error) => {
   console.error('Test suite error:', error);
   process.exit(1);

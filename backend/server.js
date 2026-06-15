@@ -227,7 +227,7 @@ httpServer.listen(PORT, () => {
   `);
 });
 
-// ====== Graceful Shutdown ======
+
 process.on('SIGTERM', () => {
   console.log('\n[SHUTDOWN] Received SIGTERM signal. Gracefully shutting down...');
   httpServer.close(() => {
